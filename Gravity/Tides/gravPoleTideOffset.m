@@ -1,4 +1,4 @@
-function [deltaC,deltaS]=gravPoleTideOffset(TT1,TT2,xpyp)
+function [deltaC,deltaS]=gravPoleTideOffset(TT1,TT2,xpyp,deltaT)
 %%GRAVPOLETIDEOFFSET Compute the offsets to add the fully normalized
 %                    spherical harmonic gravitational coefficients to
 %                    handle the effects of the pole tides. Additional Earth
@@ -42,9 +42,13 @@ function [deltaC,deltaS]=gravPoleTideOffset(TT1,TT2,xpyp)
 %March 2014 David F. Crouse, Naval Research Laboratory, Washington D.C.
 %(UNCLASSIFIED) DISTRIBUTION STATEMENT A. Approved for public release.
 
-if(nargin<5)
+if(nargin<3)
     [JulUTC1,JulUTC2]=TT2UTC(TT1,TT2);
     xpyp=getEOP(JulUTC1,JulUTC2);
+end
+
+if(nargin<4)
+    deltaT=[];
 end
 
 xp=xpyp(1);
@@ -56,7 +60,7 @@ emptyData=zeros(totalNumCoeffs,1);
 deltaC=emptyData;
 deltaS=emptyData;
 
-xpBarypBar=meanRotPoleLoc(TT1,TT2);
+xpBarypBar=meanRotPoleLoc(TT1,TT2,deltaT);
 xpBar=xpBarypBar(1);
 ypBar=xpBarypBar(2);
 

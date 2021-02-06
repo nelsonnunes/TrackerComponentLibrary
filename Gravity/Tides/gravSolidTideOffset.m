@@ -1,4 +1,4 @@
-function [deltaC,deltaS]=gravSolidTideOffset(rMoon,rSun,TT1,TT2)
+function [deltaC,deltaS]=gravSolidTideOffset(rMoon,rSun,TT1,TT2,deltaT)
 %%GRAVSOLIDTIDEOFFSET Compute the offsets to add the fully normalized
 %                     spherical harmonic gravitational coefficients to
 %                     handle the effects of the solid Earth tides. Ocean
@@ -67,6 +67,10 @@ function [deltaC,deltaS]=gravSolidTideOffset(rMoon,rSun,TT1,TT2)
 %The convention for indexing arrays of constant parameters is that 1 refers
 %to a value with respect to lunar parameters and 2 refers to a value with
 %respect to solar parameters.
+
+if(nargin<5)
+    deltaT=[];
+end
 
 %The equatorial radius of the Earth
 Re=Constants.EarthEqRadius;
@@ -140,7 +144,7 @@ end
 
 %%%%Now for the step 2 (frequency-dependent) corrections.
 %Convert the terrestrial time to Greenwich mean sidereal time in radians.
-GMST=TT2GMST(TT1,TT2);
+GMST=TT2GMST(TT1,TT2,[],deltaT);
 
 %These parameters are taken from Table 5.5. The columns are
 %Doodson parameters of tau, s, h, p, N', P1 and Am*delta_kx*Hs
@@ -154,7 +158,7 @@ m2TideParam=[2,  0,  0,  0,  0,  0,   39.5e-12;
              2,  2,  -2, 0,  0,  0,   18.4e-12];
 
 %Turn terrestrial time into barycentric dynamical time TDB.
-[TDB1,TDB2]=TT2TDB(TT1,TT2);
+[TDB1,TDB2]=TT2TDB(TT1,TT2,deltaT);
 
 %Get the Delaunay variables in radians
 vec=DelaunayVar(TDB1,TDB2);
