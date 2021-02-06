@@ -1,4 +1,4 @@
-function [deltaC,deltaS]=gravOceanTideOffset(TT1,TT2,deltaT)
+function [deltaC,deltaS]=gravOceanTideOffset(TT1,TT2,deltaT,maxM)
 %%GRAVOCEANTIDEOFFSET Compute the offsets to add the fully normalized
 %                     spherical harmonic gravitational coefficients to
 %                     handle the effects of the ocean Earth tides. Solid
@@ -42,52 +42,70 @@ function [deltaC,deltaS]=gravOceanTideOffset(TT1,TT2,deltaT)
 if(nargin<3)
     deltaT=[];
 end
+if(nargin<4)
+    maxM=0;
+end
 
 %Read the FES2004 coefficient file, which should be located in a data
 %folder that is in the same folder as this file.
-ScriptPath=mfilename('fullpath');
-ScriptFolder = fileparts(ScriptPath);
 
-fileID=fopen([ScriptFolder,'/data/fes2004_Cnm-Snm.dat']);
-data=textscan(fileID,'%s','CommentStyle','#','whitespace',' ','delimiter','\n');
-fclose(fileID);
-data=data{1};
+persistent dataMat;
+persistent numRows;
+persistent lastMaxM;
 
-%Put all of the elements for each row into a cell array.
-numRows=length(data);
-rowData=cell(numRows-4,1);
-for curRow=5:numRows
-    V=textscan(data{curRow},'%s');
-    rowData{curRow-4}=V{1};
-end
+if isempty(dataMat) || maxM ~= lastMaxM
+    ScriptPath=mfilename('fullpath');
+    ScriptFolder = fileparts(ScriptPath);
 
-numRows=numRows-4;%The number of data rows.
-%Allocate a matrix to hold the data values of the table. The first six
-%values are the Doodson parameters.
-dataMat=zeros(numRows,12);
-for curRow=1:numRows
-    %Extract the digits of the Doodson parameters. The Doodson parameters
-    %have all but the first digit augmented by 5.
-    VScan=textscan(rowData{curRow}{1},'%f');
-    DoodsonVal=VScan{1};
-    %Extract the digits. The -5 gets rid of the offset of 5 on all but the
-    %first digit.
-    dataMat(curRow,1)=fix(mod(fix(DoodsonVal/100),10));
-    dataMat(curRow,2)=fix(mod(fix(DoodsonVal/10),10))-5;
-    dataMat(curRow,3)=fix(mod(fix(DoodsonVal),10))-5;
-    dataMat(curRow,4)=fix(mod(fix(DoodsonVal*10),10))-5;
-    dataMat(curRow,5)=fix(mod(fix(DoodsonVal*100),10))-5;
-    dataMat(curRow,6)=fix(mod(fix(DoodsonVal*1000),10))-5;
+    fileID=fopen([ScriptFolder,'/data/fes2004_Cnm-Snm.dat']);
+    data=textscan(fileID,'%s','CommentStyle','#','whitespace',' ','delimiter','\n');
+    fclose(fileID);
+    data=data{1};
+
+    %Put all of the elements for each row into a cell array.
+    numRows=length(data);
+    rowData=cell(numRows-4,1);
+    for curRow=5:numRows
+        V=textscan(data{curRow},'%s');
+        rowData{curRow-4}=V{1};
+    end
+
+    numRows=numRows-4;%The number of data rows.
+    %Allocate a matrix to hold the data values of the table. The first six
+    %values are the Doodson parameters.
+    dataMat=zeros(numRows,12);
+    for curRow=1:numRows
+        %Extract the digits of the Doodson parameters. The Doodson parameters
+        %have all but the first digit augmented by 5.
+        VScan=textscan(rowData{curRow}{1},'%f');
+        DoodsonVal=VScan{1};
+        %Extract the digits. The -5 gets rid of the offset of 5 on all but the
+        %first digit.
+        dataMat(curRow,1)=fix(mod(fix(DoodsonVal/100),10));
+        dataMat(curRow,2)=fix(mod(fix(DoodsonVal/10),10))-5;
+        dataMat(curRow,3)=fix(mod(fix(DoodsonVal),10))-5;
+        dataMat(curRow,4)=fix(mod(fix(DoodsonVal*10),10))-5;
+        dataMat(curRow,5)=fix(mod(fix(DoodsonVal*100),10))-5;
+        dataMat(curRow,6)=fix(mod(fix(DoodsonVal*1000),10))-5;
+
+        for n=7:12
+            %The -4 skips the Darw field in the data file.
+            VScan=textscan(rowData{curRow}{n-4},'%f');
+            dataMat(curRow,n)=VScan{1};
+        end    
+    end
+
+    %The units of the coefficients are 10^(-12).
+    dataMat(:,9:12)=dataMat(:,9:12)*10^(-12);
     
-    for n=7:12
-        %The -4 skips the Darw field in the data file.
-        VScan=textscan(rowData{curRow}{n-4},'%f');
-        dataMat(curRow,n)=VScan{1};
-    end    
-end
+    %Filter by degree
+    if maxM > 0
+        dataMat = dataMat(dataMat(:,7) <= maxM,:);
+        numRows=size(dataMat,1);
+    end
 
-%The units of the coefficients are 10^(-12).
-dataMat(:,9:12)=dataMat(:,9:12)*10^(-12);
+    lastMaxM = maxM;
+end
 
 %%NEXT, SYNTHESIZE THE COEFFICIENTS USING EQUATION 6.15
 %The maximum order of the coefficients that will be offset.
