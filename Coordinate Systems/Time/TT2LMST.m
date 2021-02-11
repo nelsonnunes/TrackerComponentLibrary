@@ -1,4 +1,4 @@
-function LMST=TT2LMST(Jul1,Jul2,rObsITRS,version,deltaT,xpyp)
+function [LMST, GMST]=TT2LMST(Jul1,Jul2,rObsITRS,version,deltaT,xpyp)
 %%TT2LMST Convert from terrestrial time (TT) to local mean sidereal
 %         time (LMST), which is a measure of the rotational direction of
 %         the Earth.
@@ -66,12 +66,17 @@ if(nargin<6||isempty(deltaT)||isempty(xpyp))
 end
 
 %Get GMST.
-GMST=TT2GMST(Jul1,Jul2,version,deltaT);
+tmpGMST=TT2GMST(Jul1,Jul2,version,deltaT);
 rObsTIRS=ITRS2TIRS(rObsITRS,Jul1,Jul2,xpyp);
 rObsSphere=Cart2Sphere(rObsTIRS);
 
 %Add the East longitude of the observer in the TIRS.
-LMST=wrapRange(GMST+rObsSphere(2),-pi,pi);
+LMST=wrapRange(tmpGMST+rObsSphere(2),-pi,pi);
+
+if nargout > 1
+    GMST = tmpGMST;
+end
+
 end
 
 %LICENSE:

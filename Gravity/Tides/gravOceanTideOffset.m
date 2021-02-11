@@ -1,4 +1,4 @@
-function [deltaC,deltaS]=gravOceanTideOffset(TT1,TT2,deltaT,maxM)
+function [deltaC,deltaS]=gravOceanTideOffset(TT1,TT2,maxM,deltaT,GMST,TDB1,TDB2)
 %%GRAVOCEANTIDEOFFSET Compute the offsets to add the fully normalized
 %                     spherical harmonic gravitational coefficients to
 %                     handle the effects of the ocean Earth tides. Solid
@@ -40,10 +40,10 @@ function [deltaC,deltaS]=gravOceanTideOffset(TT1,TT2,deltaT,maxM)
 %(UNCLASSIFIED) DISTRIBUTION STATEMENT A. Approved for public release.
 
 if(nargin<3)
-    deltaT=[];
+    maxM=0;
 end
 if(nargin<4)
-    maxM=0;
+    deltaT=[];
 end
 
 %Read the FES2004 coefficient file, which should be located in a data
@@ -100,7 +100,7 @@ if isempty(dataMat) || maxM ~= lastMaxM
     
     %Filter by degree
     if maxM > 0
-        dataMat = dataMat(dataMat(:,7) <= maxM,:);
+        dataMat=dataMat(dataMat(:,7) <= maxM,:);
         numRows=size(dataMat,1);
     end
 
@@ -119,10 +119,14 @@ deltaS=CountingClusterSet(emptyData);
 %values.
 
 %Convert the terrestrial time to Greenwich mean sidereal time in radians.
-GMST=TT2GMST(TT1,TT2,[],deltaT);
+if nargin < 5
+    GMST=TT2GMST(TT1,TT2,[],deltaT);
+end
 
 %Turn terrestrial time into barycentric dynamical time TDB.
-[TDB1,TDB2]=TT2TDB(TT1,TT2,deltaT);
+if nargin < 7
+    [TDB1,TDB2]=TT2TDB(TT1,TT2,deltaT);
+end
 
 %Get the Delaunay variables in radians
 vec=DelaunayVar(TDB1,TDB2);
