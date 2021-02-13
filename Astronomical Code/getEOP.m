@@ -683,7 +683,8 @@ for curEntry=1:numEntry
         idx=baseIdx+(80:86);
         val=sscanf(rawText(idx),'%f');%LOD, not always filled.
         if(~isempty(val))
-            dataRet(curEntry,8)=val;
+            %The 1000 converts from milliseconds to seconds
+            dataRet(curEntry,8)=val/1000;
         else
             %Mark as unavailable by setting it to Inf.
             dataRet(curEntry,8)=Inf;
