@@ -111,7 +111,7 @@ end
 [deltaC,deltaS]=gravPoleTideOffset(TT1,TT2,xpyp);
 
 %Add in the pole tide offsets.
-numOffset=length(deltaC.clusterEls);
+numOffset=length(deltaC);
 if(numOffset<=numEl)
     CTide(1:numOffset)=CTide(1:numOffset)+deltaC(:);
     STide(1:numOffset)=STide(1:numOffset)+deltaS(:);
